@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عرض سعر - Offer Price</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c-header-banner-bg:   #C8963E;
+    --c-header-banner-text: #FFFFFF;
+    --c-header-bg:          #FFFFFF;
+    --c-meta-bg:            #F5F2EE;
+    --c-meta-border:        #D4B896;
+    --c-table-header-bg:    #C8963E;
+    --c-table-header-text:  #FFFFFF;
+    --c-table-row-alt:      #FAF7F3;
+    --c-table-row-hover:    #FDF3E7;
+    --c-table-border:       #E8DDD0;
+    --c-total-grand-bg:     #C8963E;
+    --c-total-grand-text:   #FFFFFF;
+    --c-total-value:        #A07830;
+    --c-footer-bg:          #1A1A1A;
+    --c-footer-text:        #AAAAAA;
+    --c-page-bg:            #EDE8E0;
+    --c-text-main:          #1A1A1A;
+    --c-accent:             #C8963E;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--c-page-bg);
+    min-height: 100vh;
+    padding: 24px 16px;
+    color: var(--c-text-main);
+    transition: background 0.3s;
+  }
+
+  /* ===================== LAYOUT WRAPPER ===================== */
+  .outer-wrap {
+    display: flex;
+    gap: 18px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: flex-start;
+  }
+
+  /* ===================== COLOR PANEL ===================== */
+  .color-panel {
+    width: 230px;
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    overflow: hidden;
+    position: sticky;
+    top: 20px;
+    direction: rtl;
+  }
+
+  .panel-header {
+    background: var(--c-accent);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-header span { font-size: 18px; }
+  .panel-header h3 {
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  .panel-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 0 4px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 4px;
+  }
+  .section-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    cursor: pointer;
+    gap: 8px;
+  }
+
+  .color-row:hover { background: #f8f8f8; }
+
+  .color-row label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .color-swatch-wrap {
+    position: relative;
+    width: 32px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .color-swatch-wrap input[type="color"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1.5px solid #ddd;
+    background: none;
+    opacity: 0.01;
+    z-index: 2;
+  }
+
+  .color-preview {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 4px;
+    border: 1.5px solid #ddd;
+    pointer-events: none;
+  }
+
+  .reset-btn {
+    display: block;
+    width: calc(100% - 28px);
+    margin: 12px 14px;
+    padding: 9px;
+    background: #f5f5f5;
+    border: 1.5px solid #ddd;
+    border-radius: 7px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .reset-btn:hover { background: #eee; color: #333; }
+
+  /* ===================== PAGE ===================== */
+  .page-wrap { flex: 1; min-width: 0; }
+
+  .page {
+    background: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    transition: all 0.3s;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: stretch;
+    background: var(--c-header-bg);
+    transition: background 0.3s;
+  }
+
+  .logo-area {
+    padding: 28px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    background: var(--c-header-bg);
+    transition: background 0.3s;
+  }
+
+  .logo-upload-zone {
+    width: 200px;
+    height: 80px;
+    border: 2px dashed #D4B896;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #F5F2EE;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-upload-zone:hover { border-color: var(--c-accent); background: #FDF8F2; }
+  .logo-upload-zone img { width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; }
+  .logo-upload-zone .upload-hint { font-size:11px; color:#999; text-align:center; line-height:1.5; z-index:1; }
+  .logo-upload-zone .upload-icon { font-size:22px; margin-bottom:4px; }
+  #logoInput { display:none; }
+
+  .title-banner {
+    background: var(--c-header-banner-bg);
+    padding: 0 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 240px;
+    clip-path: polygon(18px 0%, 100% 0%, 100% 100%, 0% 100%);
+    transition: background 0.3s;
+  }
+  .title-banner h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: var(--c-header-banner-text);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+
+  /* ===== META ===== */
+  .meta-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 20px 36px;
+    gap: 20px;
+    border-bottom: 2px solid var(--c-meta-border);
+    background: var(--c-meta-bg);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .meta-left h2 { font-size:13px; color:#888; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .meta-left input {
+    font-family:'Cairo',sans-serif; font-size:20px; font-weight:800; color:var(--c-text-main);
+    border:none; background:transparent; border-bottom:2px solid transparent;
+    transition:border-color 0.2s; width:100%; outline:none; direction:rtl;
+  }
+  .meta-left input:focus { border-bottom-color: var(--c-accent); }
+  .meta-right { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .meta-field { display:flex; align-items:center; gap:10px; }
+  .meta-field label { font-size:13px; font-weight:700; color:#555; min-width:60px; text-align:left; }
+  .meta-field input {
+    font-family:'Cairo',sans-serif; font-size:14px; font-weight:600; color:var(--c-text-main);
+    border:1px solid var(--c-meta-border); border-radius:4px; padding:4px 10px;
+    background:white; outline:none; transition:border-color 0.2s; min-width:140px; direction:ltr;
+  }
+  .meta-field input:focus { border-color: var(--c-accent); }
+
+  /* ===== TABLE ===== */
+  .table-wrapper { padding: 24px 36px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead tr { background: var(--c-table-header-bg); transition: background 0.3s; }
+  thead th {
+    color: var(--c-table-header-text);
+    font-weight:700; padding:13px 12px; text-align:center; font-size:14px; letter-spacing:0.5px;
+    transition: color 0.3s;
+  }
+  tbody tr { border-bottom: 1px solid var(--c-table-border); transition: background 0.15s; }
+  tbody tr:nth-child(even) { background: var(--c-table-row-alt); }
+  tbody tr:hover { background: var(--c-table-row-hover); }
+  tbody td { padding:14px 12px; vertical-align:middle; text-align:center; }
+  td.desc { text-align:right; direction:rtl; min-width:200px; }
+
+  .desc-input {
+    font-family:'Cairo',sans-serif; font-size:13px; color:var(--c-text-main);
+    border:1px dashed transparent; background:transparent; width:100%; min-height:60px;
+    resize:none; outline:none; direction:rtl; line-height:1.7;
+    transition:border-color 0.2s; border-radius:4px; padding:4px 6px;
+  }
+  .desc-input:focus { border-color:#ccc; background:white; }
+
+  .img-cell { min-width:120px; width:130px; }
+  .img-upload-zone {
+    width:110px; height:80px; border:2px dashed #D4B896; border-radius:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; margin:0 auto; overflow:hidden; position:relative;
+    background:#F5F2EE; transition:all 0.2s;
+  }
+  .img-upload-zone:hover { border-color: var(--c-accent); background:#FFF8EE; }
+  .img-upload-zone img { width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; border-radius:4px; }
+  .img-upload-zone .img-hint { font-size:9px; color:#bbb; text-align:center; line-height:1.4; z-index:1; pointer-events:none; }
+  .img-upload-zone .img-icon { font-size:18px; margin-bottom:2px; }
+  .img-upload-zone .remove-img {
+    position:absolute; top:3px; right:3px; background:rgba(0,0,0,0.5); color:white;
+    border:none; border-radius:50%; width:18px; height:18px; font-size:10px; cursor:pointer;
+    display:none; align-items:center; justify-content:center; z-index:2;
+  }
+  .img-upload-zone:hover .remove-img { display:flex; }
+
+  .price-input, .qty-input {
+    font-family:'Cairo',sans-serif; font-size:14px; font-weight:700;
+    border:1px dashed transparent; background:transparent; text-align:center;
+    outline:none; border-radius:4px; padding:4px 6px;
+    transition:border-color 0.2s, background 0.2s; width:80px; color:var(--c-text-main);
+  }
+  .price-input:focus, .qty-input:focus { border-color:#ccc; background:white; }
+  .qty-input { width:60px; }
+  .total-cell { font-weight:800; color:var(--c-total-value); width:90px; display:inline-block; transition:color 0.3s; }
+  td.no-cell { font-weight:800; color:var(--c-accent); font-size:16px; }
+
+  .row-actions { width:30px; padding:0 6px !important; }
+  .remove-row {
+    background:none; border:1px solid #ddd; border-radius:50%; width:22px; height:22px;
+    cursor:pointer; font-size:13px; color:#bbb; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; margin:0 auto;
+  }
+  .remove-row:hover { background:#fee; border-color:#e88; color:#c55; }
+
+  .add-row-btn {
+    display:block; width:100%; padding:10px; margin-top:10px;
+    background:none; border:2px dashed #D4B896; border-radius:6px;
+    color:var(--c-accent); font-family:'Cairo',sans-serif; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.5px;
+  }
+  .add-row-btn:hover { background:#FFF8EE; border-color:var(--c-accent); }
+
+  /* ===== TOTALS ===== */
+  .totals-section { display:flex; justify-content:flex-end; padding:10px 36px 0; }
+  .totals-box { min-width:280px; border:1px solid #D4B896; border-radius:8px; overflow:hidden; }
+  .totals-row {
+    display:grid; grid-template-columns:1fr auto; padding:10px 18px;
+    border-bottom:1px solid #E8DDD0; align-items:center;
+  }
+  .totals-row:last-child { border-bottom:none; background:var(--c-total-grand-bg); transition:background 0.3s; }
+  .totals-row:last-child .t-label,
+  .totals-row:last-child .t-value { color:var(--c-total-grand-text); font-size:16px; font-weight:800; transition:color 0.3s; }
+  .t-label { font-size:13px; font-weight:600; color:#555; }
+  .t-value { font-size:14px; font-weight:800; color:var(--c-text-main); direction:ltr; }
+  .discount-row { background:#FFF8EE; }
+  .discount-input-wrap { display:flex; align-items:center; gap:5px; }
+  .discount-type-toggle { display:flex; border:1px solid #D4B896; border-radius:4px; overflow:hidden; }
+  .disc-btn {
+    font-family:'Cairo',sans-serif; font-size:12px; font-weight:700;
+    padding:2px 8px; border:none; background:#fff; color:#888; cursor:pointer;
+    transition:all 0.2s;
+  }
+  .disc-btn.active { background:var(--c-accent); color:white; }
+  .disc-btn:hover:not(.active) { background:#f0f0f0; }
+  .discount-input {
+    font-family:'Cairo',sans-serif; font-size:13px; font-weight:700;
+    border:1px solid #D4B896; border-radius:4px; padding:2px 8px; width:70px;
+    outline:none; text-align:center; direction:ltr;
+  }
+  .discount-input:focus { border-color:var(--c-accent); }
+
+  /* ===== NOTES ===== */
+  .notes-section { padding:20px 36px; border-top:1px solid #E8DDD0; margin-top:20px; }
+  .notes-section h3 { font-size:13px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .notes-area {
+    font-family:'Cairo',sans-serif; font-size:13px; color:var(--c-text-main);
+    border:1px solid #D4B896; border-radius:6px; padding:10px 14px; width:100%;
+    min-height:70px; resize:vertical; outline:none; direction:rtl; line-height:1.7;
+    transition:border-color 0.2s; background:#F5F2EE;
+  }
+  .notes-area:focus { border-color:var(--c-accent); background:white; }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    background:var(--c-footer-bg); padding:16px 36px;
+    display:flex; justify-content:space-between; align-items:center; margin-top:20px;
+    transition:background 0.3s;
+  }
+  .footer-left input {
+    font-family:'Cairo',sans-serif; font-size:12px; color:var(--c-footer-text);
+    background:transparent; border:none; outline:none; direction:rtl; width:260px;
+    transition:color 0.3s;
+  }
+  .footer-left input::placeholder { color:#666; }
+  .footer-right { font-size:11px; color:#666; letter-spacing:1px; }
+
+  /* ===== TOOLBAR ===== */
+  .toolbar { display:flex; gap:10px; justify-content:center; padding:16px 0 0; }
+  .btn {
+    font-family:'Cairo',sans-serif; padding:10px 28px; border-radius:6px; font-size:14px;
+    font-weight:700; cursor:pointer; border:none; transition:all 0.2s; letter-spacing:0.5px;
+  }
+  .btn-primary { background:var(--c-accent); color:white; }
+  .btn-primary:hover { filter:brightness(0.9); }
+  .btn-outline { background:transparent; color:var(--c-accent); border:2px solid var(--c-accent); }
+  .btn-outline:hover { background:var(--c-accent); color:white; }
+
+  @media print {
+    body { background:white; padding:0; }
+    .color-panel, .toolbar, .add-row-btn, .remove-row, .row-actions, .mobile-panel-toggle { display:none !important; }
+    .outer-wrap { display:block; max-width:100%; }
+    .page-wrap { width:100%; }
+    .page { box-shadow:none; }
+    .logo-upload-zone .upload-hint, .img-upload-zone .img-hint { display:none; }
+    input, textarea { border-color:transparent !important; }
+    /* Fix: show full description text in print/PDF */
+    .desc-input { display:none !important; }
+    .desc-print { display:block !important; }
+  }
+
+  /* ===================== MOBILE RESPONSIVE ===================== */
+  .mobile-panel-toggle {
+    display: none;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--c-accent);
+    color: white;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  /* description print div (hidden on screen) */
+  .desc-print {
+    display: none;
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    color: var(--c-text-main);
+    direction: rtl;
+    line-height: 1.7;
+    padding: 4px 6px;
+    text-align: right;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 12px 8px; }
+
+    .mobile-panel-toggle { display: block; }
+
+    .outer-wrap {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .color-panel {
+      width: 100%;
+      position: static;
+      display: none;
+    }
+    .color-panel.mobile-open { display: block; }
+
+    .panel-body { max-height: 300px; }
+
+    /* Header */
+    .header {
+      grid-template-columns: 1fr;
+    }
+    .title-banner {
+      clip-path: none;
+      padding: 14px 20px;
+      min-width: unset;
+      justify-content: center;
+    }
+    .title-banner h1 { font-size: 22px; }
+    .logo-area { padding: 16px 20px; }
+
+    /* Meta */
+    .meta-section {
+      grid-template-columns: 1fr;
+      padding: 16px 20px;
+      gap: 12px;
+    }
+    .meta-right { align-items: flex-start; }
+    .meta-field { flex-direction: row-reverse; justify-content: flex-end; }
+    .meta-field input { min-width: 120px; flex: 1; }
+
+    /* Table: scroll horizontally */
+    .table-wrapper { padding: 14px 10px; overflow-x: auto; }
+    table { min-width: 520px; font-size: 12px; }
+    thead th { padding: 10px 8px; font-size: 12px; }
+    tbody td { padding: 10px 8px; }
+
+    /* Totals */
+    .totals-section { padding: 10px 10px 0; }
+    .totals-box { min-width: unset; width: 100%; }
+
+    /* Notes */
+    .notes-section { padding: 16px 20px; }
+
+    /* Footer */
+    .footer { padding: 14px 20px; flex-direction: column; gap: 8px; text-align: center; }
+    .footer-left input { width: 100%; text-align: center; }
+
+    /* Toolbar */
+    .toolbar { flex-direction: column; align-items: stretch; padding: 12px 10px 0; }
+    .btn { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="outer-wrap">
+
+  <!-- Mobile toggle for color panel -->
+  <button class="mobile-panel-toggle" onclick="document.querySelector('.color-panel').classList.toggle('mobile-open')">🎨 تعديل الألوان</button>
+
+  <!-- ===== COLOR PANEL ===== -->
+  <div class="color-panel">
+    <div class="panel-header">
+      <span>🎨</span>
+      <h3>تعديل الألوان</h3>
+    </div>
+    <div class="panel-body" id="colorPanelBody">
+      <!-- sections injected by JS -->
+    </div>
+    <button class="reset-btn" onclick="resetColors()">↺ استعادة الألوان الافتراضية</button>
+  </div>
+
+  <!-- ===== DOCUMENT ===== -->
+  <div class="page-wrap">
+    <div class="page">
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="logo-area">
+          <div class="logo-upload-zone" id="logoZone" onclick="document.getElementById('logoInput').click()" title="اضغط لرفع شعار الشركة">
+            <span class="upload-icon">🏢</span>
+            <span class="upload-hint">اضغط لرفع<br>شعار الشركة</span>
+            <img id="logoPreview" src="" alt="" style="display:none">
+          </div>
+          <input type="file" id="logoInput" accept="image/*" onchange="uploadLogo(this)">
+        </div>
+        <div class="title-banner">
+          <h1>Offer Price</h1>
+        </div>
+      </div>
+
+      <!-- META -->
+      <div class="meta-section">
+        <div class="meta-left">
+          <h2>Offer Price To</h2>
+          <input type="text" placeholder="اسم العميل / Customer Name" id="clientName">
+        </div>
+        <div class="meta-right">
+          <div class="meta-field">
+            <input type="text" id="offerNumber" placeholder="#7000000">
+            <label>Number :</label>
+          </div>
+          <div class="meta-field">
+            <input type="text" id="offerDate" placeholder="26 Mar 2026">
+            <label>Date :</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrapper">
+        <table id="quoteTable">
+          <thead>
+            <tr>
+              <th style="width:40px">NO.</th>
+              <th>Product Description</th>
+              <th style="width:130px">Product Image</th>
+              <th style="width:90px">Price</th>
+              <th style="width:70px">QTY</th>
+              <th style="width:90px">Total</th>
+              <th style="width:30px" class="row-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addRow()">+ إضافة منتج جديد</button>
+      </div>
+
+      <!-- TOTALS -->
+      <div class="totals-section">
+        <div class="totals-box">
+          <div class="totals-row">
+            <span class="t-label">المجموع / Subtotal</span>
+            <span class="t-value" id="subtotal">0.00</span>
+          </div>
+          <div class="totals-row discount-row">
+            <span class="t-label">خصم / Discount</span>
+            <span class="t-value">
+              <div class="discount-input-wrap">
+                <input class="discount-input" type="number" id="discountInput" min="0" value="0" oninput="calcTotals()">
+                <div class="discount-type-toggle">
+                  <button class="disc-btn active" id="btnPct" onclick="setDiscountType('pct')">%</button>
+                  <button class="disc-btn" id="btnFixed" onclick="setDiscountType('fixed')">ج.م</button>
+                </div>
+              </div>
+            </span>
+          </div>
+          <div class="totals-row">
+            <span class="t-label">الإجمالي / Grand Total</span>
+            <span class="t-value" id="grandTotal">0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="notes-section">
+        <h3>ملاحظات / Notes</h3>
+        <textarea class="notes-area" placeholder="أي ملاحظات أو شروط إضافية..."></textarea>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="footer">
+        <div class="footer-left">
+          <input type="text" placeholder="العنوان | رقم التليفون | البريد الإلكتروني">
+        </div>
+        <div class="footer-right">OFFER PRICE</div>
+      </div>
+
+    </div><!-- /page -->
+
+    <div class="toolbar">
+      <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+      <button class="btn btn-primary" onclick="addRow()">+ منتج جديد</button>
+    </div>
+  </div><!-- /page-wrap -->
+
+</div><!-- /outer-wrap -->
+
+<script>
+// ============================================================
+// COLOR DEFINITIONS
+// ============================================================
+const COLOR_SECTIONS = [
+  {
+    label: 'الهيدر العلوي',
+    items: [
+      { label: 'خلفية الهيدر',        var: '--c-header-bg',           default: '#FFFFFF' },
+      { label: 'خلفية شريط العنوان',  var: '--c-header-banner-bg',    default: '#C8963E' },
+      { label: 'نص شريط العنوان',     var: '--c-header-banner-text',  default: '#FFFFFF' },
+    ]
+  },
+  {
+    label: 'قسم البيانات',
+    items: [
+      { label: 'خلفية القسم',         var: '--c-meta-bg',             default: '#F5F2EE' },
+      { label: 'لون الحدود',          var: '--c-meta-border',         default: '#D4B896' },
+    ]
+  },
+  {
+    label: 'الجدول',
+    items: [
+      { label: 'خلفية رأس الجدول',   var: '--c-table-header-bg',     default: '#C8963E' },
+      { label: 'نص رأس الجدول',      var: '--c-table-header-text',   default: '#FFFFFF' },
+      { label: 'صفوف متناوبة',        var: '--c-table-row-alt',       default: '#FAF7F3' },
+      { label: 'hover الصف عند',      var: '--c-table-row-hover',     default: '#FDF3E7' },
+      { label: 'حدود الجدول',         var: '--c-table-border',        default: '#E8DDD0' },
+    ]
+  },
+  {
+    label: 'قسم الإجمالي',
+    items: [
+      { label: 'خلفية الإجمالي',      var: '--c-total-grand-bg',      default: '#C8963E' },
+      { label: 'نص الإجمالي',         var: '--c-total-grand-text',    default: '#FFFFFF' },
+      { label: 'لون أرقام التوتال',   var: '--c-total-value',         default: '#A07830' },
+    ]
+  },
+  {
+    label: 'الفوتر',
+    items: [
+      { label: 'خلفية الفوتر',        var: '--c-footer-bg',           default: '#1A1A1A' },
+      { label: 'نص الفوتر',           var: '--c-footer-text',         default: '#AAAAAA' },
+    ]
+  },
+  {
+    label: 'عام',
+    items: [
+      { label: 'خلفية الصفحة',        var: '--c-page-bg',             default: '#EDE8E0' },
+      { label: 'لون النصوص الرئيسي',  var: '--c-text-main',           default: '#1A1A1A' },
+      { label: 'اللون المميز (Accent)',var: '--c-accent',              default: '#C8963E' },
+    ]
+  }
+];
+
+// Build panel
+const panelBody = document.getElementById('colorPanelBody');
+COLOR_SECTIONS.forEach(section => {
+  const lbl = document.createElement('div');
+  lbl.className = 'section-label';
+  lbl.textContent = section.label;
+  panelBody.appendChild(lbl);
+
+  section.items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'color-row';
+    row.innerHTML = `
+      <label for="cp-${item.var}">${item.label}</label>
+      <div class="color-swatch-wrap">
+        <div class="color-preview" id="preview-${item.var}" style="background:${item.default}"></div>
+        <input type="color" id="cp-${item.var}" value="${item.default}" data-var="${item.var}">
+      </div>
+    `;
+    panelBody.appendChild(row);
+
+    row.querySelector('input[type="color"]').addEventListener('input', function() {
+      applyColor(this.dataset.var, this.value);
+    });
+    row.addEventListener('click', e => {
+      if (e.target.tagName !== 'INPUT') row.querySelector('input[type="color"]').click();
+    });
+  });
+});
+
+function applyColor(cssVar, value) {
+  document.documentElement.style.setProperty(cssVar, value);
+  const preview = document.getElementById(`preview-${cssVar}`);
+  if (preview) preview.style.background = value;
+}
+
+function resetColors() {
+  COLOR_SECTIONS.forEach(section => {
+    section.items.forEach(item => {
+      document.documentElement.style.setProperty(item.var, item.default);
+      const input = document.getElementById(`cp-${item.var}`);
+      if (input) input.value = item.default;
+      const preview = document.getElementById(`preview-${item.var}`);
+      if (preview) preview.style.background = item.default;
+    });
+  });
+}
+
+// ============================================================
+// TABLE LOGIC
+// ============================================================
+let rowCount = 0;
+let discountType = 'pct'; // 'pct' or 'fixed'
+
+function setDiscountType(type) {
+  discountType = type;
+  document.getElementById('btnPct').classList.toggle('active', type === 'pct');
+  document.getElementById('btnFixed').classList.toggle('active', type === 'fixed');
+  const input = document.getElementById('discountInput');
+  if (type === 'pct') { input.max = 100; } else { input.removeAttribute('max'); }
+  calcTotals();
+}
+
+function syncDesc(textarea) {
+  const printDiv = textarea.nextElementSibling;
+  if (printDiv) printDiv.textContent = textarea.value;
+}
+
+function addRow() {
+  rowCount++;
+  const tbody = document.getElementById('tableBody');
+  const tr = document.createElement('tr');
+  tr.id = `row-${rowCount}`;
+  const rc = rowCount;
+  tr.innerHTML = `
+    <td class="no-cell">${rc}</td>
+    <td class="desc">
+      <textarea class="desc-input" rows="4" placeholder="وصف المنتج..." oninput="syncDesc(this)"></textarea>
+      <div class="desc-print"></div>
+    </td>
+    <td class="img-cell">
+      <div class="img-upload-zone" onclick="triggerImgUpload(${rc})" title="اضغط لرفع صورة المنتج">
+        <span class="img-icon">📷</span>
+        <span class="img-hint">اضغط لرفع<br>صورة</span>
+        <img id="prodImg-${rc}" src="" alt="" style="display:none">
+        <button class="remove-img" onclick="removeImg(event,${rc})" title="حذف الصورة">✕</button>
+      </div>
+      <input type="file" id="imgInput-${rc}" accept="image/*" style="display:none" onchange="previewImg(this,${rc})">
+    </td>
+    <td><input class="price-input" type="number" min="0" value="" placeholder="0" oninput="calcRow(${rc})"></td>
+    <td><input class="qty-input" type="number" min="1" value="1" oninput="calcRow(${rc})"></td>
+    <td><span class="total-cell" id="total-${rc}">0.00</span></td>
+    <td class="row-actions"><button class="remove-row" onclick="removeRow(${rc})" title="حذف">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  calcTotals();
+}
+
+function removeRow(id) {
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.remove();
+  renumberRows();
+  calcTotals();
+}
+
+function renumberRows() {
+  document.querySelectorAll('#tableBody tr').forEach((row, i) => {
+    const c = row.querySelector('.no-cell');
+    if (c) c.textContent = i + 1;
+  });
+}
+
+function calcRow(id) {
+  const row = document.getElementById(`row-${id}`);
+  if (!row) return;
+  const price = parseFloat(row.querySelector('.price-input').value) || 0;
+  const qty   = parseFloat(row.querySelector('.qty-input').value)   || 0;
+  document.getElementById(`total-${id}`).textContent = (price * qty).toFixed(2);
+  calcTotals();
+}
+
+function calcTotals() {
+  let sub = 0;
+  document.querySelectorAll('#tableBody tr').forEach(row => {
+    const c = row.querySelector('.total-cell');
+    if (c) sub += parseFloat(c.textContent) || 0;
+  });
+  const discVal = parseFloat(document.getElementById('discountInput').value) || 0;
+  let grand;
+  if (discountType === 'pct') {
+    grand = sub * (1 - Math.min(discVal, 100) / 100);
+  } else {
+    grand = Math.max(0, sub - discVal);
+  }
+  document.getElementById('subtotal').textContent  = sub.toFixed(2);
+  document.getElementById('grandTotal').textContent = grand.toFixed(2);
+}
+
+function triggerImgUpload(id) { document.getElementById(`imgInput-${id}`).click(); }
+
+function previewImg(input, id) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img  = document.getElementById(`prodImg-${id}`);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    const zone = img.parentElement;
+    zone.querySelector('.img-icon').style.display = 'none';
+    zone.querySelector('.img-hint').style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function removeImg(e, id) {
+  e.stopPropagation();
+  const img  = document.getElementById(`prodImg-${id}`);
+  img.src = ''; img.style.display = 'none';
+  const zone = img.parentElement;
+  zone.querySelector('.img-icon').style.display = '';
+  zone.querySelector('.img-hint').style.display = '';
+}
+
+function uploadLogo(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('logoPreview');
+    img.src = e.target.result; img.style.display = 'block';
+    document.querySelector('#logoZone .upload-hint').style.display = 'none';
+    document.querySelector('#logoZone .upload-icon').style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// Init
+addRow(); addRow();
+const today = new Date();
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('offerDate').value = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+</script>
+</body>
+</html>
