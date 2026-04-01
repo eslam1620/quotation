@@ -402,6 +402,9 @@
   .btn-primary:hover { filter:brightness(0.9); }
   .btn-outline { background:transparent; color:var(--c-accent); border:2px solid var(--c-accent); }
   .btn-outline:hover { background:var(--c-accent); color:white; }
+  .btn-save { background:#2c7a4b; color:white; }
+  .btn-save:hover { filter:brightness(0.9); }
+  .btn-save:disabled { background:#aaa; cursor:not-allowed; filter:none; }
 
   @media print {
     body { background:white; padding:0; }
@@ -512,6 +515,7 @@
     .btn { text-align: center; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -632,6 +636,7 @@
 
     <div class="toolbar">
       <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+      <button class="btn btn-save" onclick="saveAsImage()" id="saveBtn">📸 حفظ كصورة</button>
       <button class="btn btn-primary" onclick="addRow()">+ منتج جديد</button>
     </div>
   </div><!-- /page-wrap -->
@@ -865,6 +870,50 @@ function uploadLogo(input) {
     document.querySelector('#logoZone .upload-icon').style.display = 'none';
   };
   reader.readAsDataURL(input.files[0]);
+}
+
+// ============================================================
+// SAVE AS IMAGE
+// ============================================================
+function saveAsImage() {
+  var btn = document.getElementById('saveBtn');
+  var page = document.querySelector('.page');
+
+  // Show desc-print, hide textareas for clean capture
+  document.querySelectorAll('.desc-input').forEach(function(el){ el.style.display = 'none'; });
+  document.querySelectorAll('.desc-print').forEach(function(el){ el.style.display = 'block'; });
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الحفظ...';
+
+  html2canvas(page, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    scrollX: 0,
+    scrollY: -window.scrollY,
+    windowWidth: page.scrollWidth,
+    windowHeight: page.scrollHeight
+  }).then(function(canvas) {
+    document.querySelectorAll('.desc-input').forEach(function(el){ el.style.display = ''; });
+    document.querySelectorAll('.desc-print').forEach(function(el){ el.style.display = 'none'; });
+
+    var link = document.createElement('a');
+    var clientName = (document.getElementById('clientName').value.trim() || 'quotation').replace(/[^a-zA-Z0-9؀-ۿ_-]/g, '_');
+    link.download = clientName + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    btn.disabled = false;
+    btn.textContent = '📸 حفظ كصورة';
+  }).catch(function() {
+    document.querySelectorAll('.desc-input').forEach(function(el){ el.style.display = ''; });
+    document.querySelectorAll('.desc-print').forEach(function(el){ el.style.display = 'none'; });
+    btn.disabled = false;
+    btn.textContent = '📸 حفظ كصورة';
+    alert('حدث خطأ أثناء حفظ الصورة');
+  });
 }
 
 // Init
